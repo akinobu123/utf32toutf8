@@ -57,32 +57,74 @@ int utf32_to_utf8 (char* utf32, char* utf8, bool bLE = true)
 	return to_i;
 }
 
+void test1()
+{
+        wchar_t input[] = L"亜あいうえおA";     // UTF-32LE
+        char output[256];                       // UTF-8
+
+        int len = utf32_to_utf8 ((char*)input, output);
+
+        int i=0;
+        char* tmp = (char*)input;
+        printf("UTF-32: ");
+        while(tmp[i]!=0x0 || tmp[i+1]!=0x0 || tmp[i+2]!=0x0 || tmp[i+3]!=0x0) {
+                printf("%02x ", (unsigned char)(tmp[i++]));
+        }
+        printf("\n\nUTF-8: ");
+        i=0;
+        while(output[i] != 0x0) {
+                printf("%02x ", (unsigned char)(output[i++]));
+        }
+        printf("\n\n");
+        printf("E4BA9C = 亜\n");
+        printf("E38182 = あ\n");
+        printf("E38184 = い\n");
+        printf("E38186 = う\n");
+        printf("E38188 = え\n");
+        printf("E3818A = お\n");
+        printf("41 = A\n");
+}
+
+void test2(char* input_path, char* output_path)
+{
+	FILE * ifp;
+	FILE * ofp;
+	if ((ifp=fopen(input_path, "rb")) == NULL) {
+		printf("input file path error.\n");
+		return;
+	}
+	if ((ofp=fopen(output_path, "w")) == NULL) {
+		printf("output file path error.\n");
+		return;
+	}
+
+        char output[256];               // UTF-8
+	char input_buff[44];		// UTF-32(4byte) * 10 char + NULL
+
+	while(true) {
+		size_t size = fread(input_buff, sizeof(char), 40, ifp); 
+		input_buff[size+0] = 0x0;
+		input_buff[size+1] = 0x0;
+		input_buff[size+2] = 0x0;
+		input_buff[size+3] = 0x0;
+
+        	int len = utf32_to_utf8 ((char*)input_buff, output);
+		fprintf(ofp, "%s", output);
+
+		if (size != 40) break;
+	}
+		
+	fclose(ofp);
+	fclose(ifp);
+} 
+
 int main(int argc, char **argv)
 {
-	wchar_t input[] = L"亜あいうえおA";	// UTF-32LE
-	char output[256];			// UTF-8
-
-	int len = utf32_to_utf8 ((char*)input, output);
-
-	int i=0;
-	char* tmp = (char*)input;
-	printf("UTF-32: ");
-	while(tmp[i]!=0x0 || tmp[i+1]!=0x0 || tmp[i+2]!=0x0 || tmp[i+3]!=0x0) {
-		printf("%02x ", (unsigned char)(tmp[i++]));
+	if (argc != 3) {
+		printf("usage: a.out [input-file-path] [output-file-path]\n");
+		return 0;
 	}
-	printf("\n\nUTF-8: ");
-	i=0;
-	while(output[i] != 0x0) {
-		printf("%02x ", (unsigned char)(output[i++]));
-	}
-	printf("\n\n");
-	printf("E4BA9C = 亜\n");
-	printf("E38182 = あ\n");
-	printf("E38184 = い\n");
-	printf("E38186 = う\n");
-	printf("E38188 = え\n");
-	printf("E3818A = お\n");
-	printf("41 = A\n");
+	test2(argv[1], argv[2]);
 
 	return 0;
 }
